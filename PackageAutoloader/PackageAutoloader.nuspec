@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>PackageAutoLoader</id>
+    <version>$version$</version>
+    <title>PackageAutoLoader</title>
+    <authors>Jeff Darchuk</authors>
+    <owners>Jeff Darchuk</owners>
+        <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+        <projectUrl>https://github.com/JeffDarchuk/SCTokenManager</projectUrl>
+
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>PackageAutoloader is a tool to automatically as part of a deployment apply a Sitecore package to hydrate some content.</description>
+        <copyright>Copyright 2019 Jeff Darchuk</copyright>
+        <tags>sitecore</tags>
+  </metadata>
+</package>

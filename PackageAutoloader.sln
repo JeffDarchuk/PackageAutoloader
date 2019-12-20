@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.757
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PackageAutoloader", "PackageAutoloader\PackageAutoloader.csproj", "{DEC45963-0DFF-4419-B36D-758DA589289A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PackageAutoloaderDemo", "PackageAutoloaderDemo\PackageAutoloaderDemo.csproj", "{320A6EE5-2E08-4B63-B8B5-9DF8C55FEFB8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DEC45963-0DFF-4419-B36D-758DA589289A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEC45963-0DFF-4419-B36D-758DA589289A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEC45963-0DFF-4419-B36D-758DA589289A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEC45963-0DFF-4419-B36D-758DA589289A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{320A6EE5-2E08-4B63-B8B5-9DF8C55FEFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{320A6EE5-2E08-4B63-B8B5-9DF8C55FEFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{320A6EE5-2E08-4B63-B8B5-9DF8C55FEFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{320A6EE5-2E08-4B63-B8B5-9DF8C55FEFB8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F5BDE4E-E603-4FF1-84B2-912F673594D5}
+	EndGlobalSection
+EndGlobal
