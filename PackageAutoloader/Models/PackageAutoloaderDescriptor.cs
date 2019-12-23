@@ -9,7 +9,7 @@ namespace PackageAutoloader.Models
 {
 	public abstract class PackageAutoloaderDescriptor
 	{
-		public bool AllDescriptorItemRequirementsMustBeValid = true;
+		public virtual bool AllDescriptorItemRequirementsMustBeValid => true;
 
 		public virtual bool CustomRequirement()
 		{

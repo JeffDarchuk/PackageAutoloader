@@ -7,6 +7,7 @@ using System.Threading;
 using System.Web;
 using PackageAutoloader.Models;
 using Sitecore;
+using Sitecore.Common;
 using Sitecore.Configuration;
 using Sitecore.Data;
 using Sitecore.Data.Engines;
@@ -37,7 +38,7 @@ namespace PackageAutoloader.Pipelines.Initialize
 				}
 				else
 				{
-					foreach (var requirement in descriptor.Requirements)
+					foreach (var requirement in descriptor.Requirements ?? Enumerable.Empty<PackageAutoloaderDescriptor.DescriptorItemRequirements>())
 					{
 						if (descriptor.AllDescriptorItemRequirementsMustBeValid)
 						{

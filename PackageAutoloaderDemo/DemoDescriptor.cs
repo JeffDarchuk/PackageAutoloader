@@ -16,12 +16,6 @@ namespace PackageAutoloaderDemo
 		public void Process(PipelineArgs args)
 		{
 		}
-
-		public override bool CustomRequirement()
-		{
-			return false;
-		}
-
 		public override string PackageNamespace => "PackageAutoloaderDemo.demo.zip";
 		public override List<DescriptorItemRequirements> Requirements => new List<DescriptorItemRequirements>()
 		{
