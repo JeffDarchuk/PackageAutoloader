@@ -28,7 +28,7 @@ NOTE: This strategy requires the binary be loaded by IIS which may not happen in
 	* Note the package namespace is the base csproj namespace plus any folders using a '.' delimitor.  For example if you had a project with a root namespace "MyPackageProject" and your zip file was added at /Packages/MyPackage.zip then your package namespace would be "MyPackageProject.Packages.MyPackage.zip"
 + Implement your logic for installation using either the built in item/field validation or custom logic
 
-![main menu](doc/VSproperties.png)
+![main menu](docs/VSproperties.png)
 
 ## Descriptor examples
 
