@@ -26,6 +26,8 @@ namespace PackageAutoloader.Pipelines.Initialize
 	{
 		public void Process(PipelineArgs args)
 		{
+			HashSet<Type> alreadyInstalled = new HashSet<Type>();
+			Stack<DescriptorBase> s = new Stack<DescriptorBase>();
 			foreach (var descriptor in GetDescriptors())
 			{
 				bool valid = true;
@@ -33,12 +35,13 @@ namespace PackageAutoloader.Pipelines.Initialize
 				{
 					valid = false;
 					Log.Info(
-						$"PackageAutoLoader: Package {descriptor.PackageNamespace} will not be installed because it doesn't pass a custom requirement",
+						$"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because it doesn't pass a custom requirement",
 						this);
+					alreadyInstalled.Add(descriptor.GetType());
 				}
 				else
 				{
-					foreach (var requirement in descriptor.Requirements ?? Enumerable.Empty<PackageAutoloaderDescriptor.DescriptorItemRequirements>())
+					foreach (var requirement in descriptor.Requirements ?? Enumerable.Empty<DescriptorBase.DescriptorItemRequirements>())
 					{
 						if (descriptor.AllDescriptorItemRequirementsMustBeValid)
 						{
@@ -55,8 +58,9 @@ namespace PackageAutoloader.Pipelines.Initialize
 								{
 									if (requirement.RequiredFields != null && requirement.RequiredFields.All(x => item[x.Key] == x.Value))
 									{
+										alreadyInstalled.Add(descriptor.GetType());
 										Log.Info(
-											$"PackageAutoLoader: Package {descriptor.PackageNamespace} will not be installed because there is no detected field changes",
+											$"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because there is no detected field changes",
 											this);
 										valid = false;
 										if (descriptor.AllDescriptorItemRequirementsMustBeValid)
@@ -65,7 +69,8 @@ namespace PackageAutoloader.Pipelines.Initialize
 
 									if (requirement.RequiredFields == null)
 									{
-										Log.Info($"PackageAutoLoader: Package {descriptor.PackageNamespace} will not be installed because the key item already exists",
+										alreadyInstalled.Add(descriptor.GetType());
+										Log.Info($"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because the key item already exists",
 											this);
 										valid = false;
 										if (descriptor.AllDescriptorItemRequirementsMustBeValid)
@@ -76,7 +81,7 @@ namespace PackageAutoloader.Pipelines.Initialize
 							else
 							{
 								Log.Info(
-									$"PackageAutoLoader: Package {descriptor.PackageNamespace} will not be installed because the database {requirement.Database} is not available.",
+									$"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because the database {requirement.Database} is not available.",
 									this);
 								valid = false;
 								if (descriptor.AllDescriptorItemRequirementsMustBeValid)
@@ -86,7 +91,7 @@ namespace PackageAutoloader.Pipelines.Initialize
 						else
 						{
 							Log.Info(
-								$"PackageAutoLoader: Package {descriptor.PackageNamespace} will not be installed because the database is white space on the descriptor, database is a required property.",
+								$"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because the database is white space on the descriptor, database is a required property.",
 								this);
 							valid = false;
 							if (descriptor.AllDescriptorItemRequirementsMustBeValid)
@@ -99,14 +104,41 @@ namespace PackageAutoloader.Pipelines.Initialize
 				}
 
 				if (!valid)
-					break;
-				Log.Info($"PackageAutoLoader: Installing Package {descriptor.PackageNamespace}", this);
-				InstallSitecorePackage(descriptor);
-				Log.Info($"PackageAutoLoader: Finished Installing Package {descriptor.PackageNamespace}", this);
+					continue;
+
+				s.Push(descriptor);
+			}
+			Dictionary<string, int> installCount = new Dictionary<string, int>();
+			while (s.Any())
+			{
+				var descriptor = s.Pop();
+				if (descriptor.Dependencies == null || descriptor.Dependencies.All(x => alreadyInstalled.Contains(x)))
+				{
+					Log.Info($"PackageAutoLoader: Installing Package {descriptor.GetType().FullName}", this);
+					InstallSitecorePackage(descriptor);
+					Log.Info($"PackageAutoLoader: Finished Installing Package {descriptor.GetType().FullName}", this);
+				}
+				else if (descriptor.Dependencies != null)
+				{
+					var id = descriptor.GetType().AssemblyQualifiedName;
+					if (!installCount.ContainsKey(id))
+					{
+						installCount.Add(id, 0);
+					}
+					else if (installCount[id] > 10)
+					{
+						throw new Exception($"Unable to install {id} because dependencies can't be resolved.");
+					}
+					else
+					{
+						installCount[id] = installCount[id] + 1;
+					}
+					s.Push(descriptor);
+				}
 			}
 		}
 
-		protected virtual IEnumerable<PackageAutoloaderDescriptor> GetDescriptors()
+		protected virtual IEnumerable<DescriptorBase> GetDescriptors()
 		{
 			return AppDomain.CurrentDomain
 				.GetAssemblies()
@@ -116,7 +148,7 @@ namespace PackageAutoloader.Pipelines.Initialize
 				{
 					try
 					{
-						return (PackageAutoloaderDescriptor)Activator.CreateInstance(t);
+						return (DescriptorBase)Activator.CreateInstance(t);
 					}
 					catch (MissingMethodException mex)
 					{
@@ -129,11 +161,11 @@ namespace PackageAutoloader.Pipelines.Initialize
 			IEnumerable<Type> types = null;
 			try
 			{
-				types = a.GetTypes().Where(t => t.IsSubclassOf(typeof(PackageAutoloaderDescriptor)) && !t.IsAbstract);
+				types = a.GetTypes().Where(t => t.IsSubclassOf(typeof(DescriptorBase)) && !t.IsAbstract);
 			}
 			catch (ReflectionTypeLoadException e)
 			{
-				types = e.Types.Where(t => t != null && t.IsSubclassOf(typeof(PackageAutoloaderDescriptor)) && !t.IsAbstract);
+				types = e.Types.Where(t => t != null && t.IsSubclassOf(typeof(DescriptorBase)) && !t.IsAbstract);
 			}
 
 			foreach (var type in types)
@@ -142,93 +174,18 @@ namespace PackageAutoloader.Pipelines.Initialize
 			}
 		}
 
-		protected virtual void InstallSitecorePackage(PackageAutoloaderDescriptor descriptor)
+		public virtual void InstallSitecorePackage(DescriptorBase descriptor)
 		{
-			string filePath;
-			var arr = descriptor.PackageNamespace.Split('.');
-			string fileName = string.Join(".", arr.Skip(arr.Length-2).Take(2));
-			if (System.Text.RegularExpressions.Regex.IsMatch(Settings.DataFolder, @"^(([a-zA-Z]:\\)|(//)).*"))
-				//if we have an absolute path, rather than relative to the site root
-				filePath = Settings.DataFolder +
-				           @"\packages\PackageAutoLoader\";
-			else
-				filePath = HttpRuntime.AppDomainAppPath + Settings.DataFolder.Substring(1) +
-						   @"\packages\PackageAutoLoader\";
-			if (!Directory.Exists(filePath))
+			using (new SecurityDisabler())
+			using (new SyncOperationContext())
 			{
-				Directory.CreateDirectory(filePath);
-			}
-			filePath += fileName;
-			try
-			{
-				using (var manifestResourceStream = descriptor.GetType().Assembly
-					.GetManifestResourceStream(descriptor.PackageNamespace))
-				using (var file = new FileStream(filePath, FileMode.Create))
-				{
-					manifestResourceStream?.CopyTo(file);
-				}
+				IProcessingContext context = new SimpleProcessingContext();
+				context.AddAspect(descriptor.ItemInstallerEvents);
+				context.AddAspect(descriptor.FileInstallerEvents);
 
-				int count = 0;
-				while (true)
-				{
-					if (!IsFileLocked(new FileInfo(filePath)))
-					{
-						using (new SecurityDisabler())
-						using (new SyncOperationContext())
-						{
-							IProcessingContext context = new SimpleProcessingContext();
-							IItemInstallerEvents events =
-								new DefaultItemInstallerEvents(
-									new BehaviourOptions(InstallMode.Overwrite, MergeMode.Undefined));
-							context.AddAspect(events);
-							IFileInstallerEvents events1 = new DefaultFileInstallerEvents(true);
-							context.AddAspect(events1);
-
-							Sitecore.Install.Installer installer = new Sitecore.Install.Installer();
-							installer.InstallPackage(MainUtil.MapPath(filePath), context);
-							break;
-						}
-					}
-
-					Thread.Sleep(1000);
-					count++;
-					if (count > 15)
-						Log.Error($"Unable to install package using Package Autoloader {descriptor.PackageNamespace} due to the package being locked.", this);
-				}
+				Sitecore.Install.Installer installer = new Sitecore.Install.Installer();
+				installer.InstallPackage(MainUtil.MapPath(descriptor.GetRelativeFilePath()), context);
 			}
-			catch (Exception e)
-			{
-				Log.Error($"Unable to install package using Package Autoloader {descriptor.PackageNamespace}", e, this);
-			}
-		}
-		/// <summary>
-		/// checks to see if the file is done being written to the filesystem
-		/// </summary>
-		/// <param name="file"></param>
-		/// <returns></returns>
-		protected virtual bool IsFileLocked(FileInfo file)
-		{
-			FileStream stream = null;
-
-			try
-			{
-				stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
-			}
-			catch (IOException)
-			{
-				//the file is unavailable because it is:
-				//still being written to
-				//or being processed by another thread
-				//or does not exist (has already been processed)
-				return true;
-			}
-			finally
-			{
-				stream?.Close();
-			}
-
-			//file is not locked
-			return false;
 		}
 	}
 }
