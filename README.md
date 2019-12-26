@@ -15,8 +15,32 @@ Automate deployment and installation of packages to the Sitecore initalize pipel
 
 ## How it works.
 For an example review the PackageAutoLoaderDemo project in this repo
-NOTE: This strategy requires the binary be loaded by IIS which may not happen in the absense of configurations demanding the dll be loaded.  See the PackageAutoLoaderDemo project for a simple way to do this.
 
+### Descriptors
+Descriptors describe to the module what, where and how things should be installed.  All descriptors require or allow certain options to be present.
+Out of the box descriptors include PackageAutoloaderDescriptor which allow the embedding of zip files into dll files to simplify build/release needs and PackageFileLoaderDescriptor which manages a package from a filepath location that another process will deliver to.
++ GetRelativeFilePath()
+	* This determines where the package to be installed lives
+	* Note the PackageAutoloaderDescriptor will handle this automatically based on the embedded resource namespace
++ Requirements
+	* Item and field level requirements that if met will determine if the package has already been installed
++ AllDescriptorItemRequirementsMustBeValid
+	* Default: true
+	* A false value indicates that this package will be installed if any requirement is not met, if true then it only installs if ALL requirements are not met
++ Dependencies
+	* Default: null
+	* A list of types that this descriptor depends on.  Each type in this list will be installed before this descriptor.
++ ItemInstallerEvents
+	* Default: overwrite undefined
+	* The behavior that Sitecore should take when installing the package defined by the descriptor
++ FileInstallerEvents
+	* Default: DefaultFileInstallerEvents(true)
+	* Customize the OOTB Sitecore default file installer events
++ CustomRequirements()
+	* Default: true
+	* Custom logic to be applied to this descriptor should be added here.
+	
+## Two stock types of descrptors
 ### Autoloader type (embedded resource)
 You would use this type of loader if you have small packages that won't cause problems loaded into memory with the DLL and you don't want to fiddle with a custom deploy method for your packages.
 + Create the package you wish to install using Sitecore
