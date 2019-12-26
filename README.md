@@ -17,6 +17,8 @@ Automate deployment and installation of packages to the Sitecore initalize pipel
 For an example review the PackageAutoLoaderDemo project in this repo
 NOTE: This strategy requires the binary be loaded by IIS which may not happen in the absense of configurations demanding the dll be loaded.  See the PackageAutoLoaderDemo project for a simple way to do this.
 
+### Autoloader type (embedded resource)
+You would use this type of loader if you have small packages that won't cause problems loaded into memory with the DLL and you don't want to fiddle with a custom deploy method for your packages.
 + Create the package you wish to install using Sitecore
 + Install the nuget package [here](https://www.nuget.org/packages/PackageAutoLoader/).
 + Add your package to a visual studio project folder
@@ -29,6 +31,16 @@ NOTE: This strategy requires the binary be loaded by IIS which may not happen in
 + Implement your logic for installation using either the built in item/field validation or custom logic
 
 ![main menu](docs/VSproperties.png)
+### File Loader type (filesystem resource)
+You would use this type of loader if you have a large package that would would problematic to load into memory and you have a process to deploy the packages to the server.
+NOTE:  This location can be anywhere accessable by the web server.
++ Create the package you wish to install using Sitecore
++ Install the nuget package [here](https://www.nuget.org/packages/PackageAutoLoader/).
++ Add your package to a location that will be deployed to each environment.
+	* Any way you choose to facilitate this will be fine as long as it's located in an accessable location
++ Add a class extending PackageFileloaderDescriptor
+	* Note the required path is relative to the webroot
++ Implement your logic for installation using either the built in item/field validation or custom logic
 
 ## Descriptor examples
 
@@ -117,3 +129,42 @@ public class DemoDescriptor : PackageAutoloaderDescriptor
 		public override List<DescriptorItemRequirements> Requirements => new List<DescriptorItemRequirements>();
 	}
 ```
+### If you want to update the install behavior for the package
+Note here we're using the file path package
+```cs
+	public class DemoDescriptor2 : PackageFileLoaderDescriptor
+	{
+		public override IItemInstallerEvents ItemInstallerEvents => 
+			new DefaultItemInstallerEvents(new BehaviourOptions(InstallMode.Overwrite, MergeMode.Undefined));
+
+		public override List<DescriptorItemRequirements> Requirements => null;
+
+
+		public override string RelativeFilePath => "/PackageAutoloader/demo2.zip";
+	}
+```
+### If you want to install a package that has a dependency on another package
+Note here we're using the file path package
+```cs
+	public class DemoDescriptor3 : PackageFileLoaderDescriptor
+	{
+		public override List<Type> Dependencies => new List<Type>
+		{
+			typeof(DemoDescriptor2)
+		};
+
+		public override List<DescriptorItemRequirements> Requirements => new List<DescriptorItemRequirements>()
+		{
+			new DescriptorItemRequirements()
+			{
+				Database = "master",
+				ItemId = new ID("{FEAB7DBD-7FFA-405F-939D-402093C02A81}")
+			}
+		};
+
+		public override string RelativeFilePath => "/PackageAutoloader/demo3.zip";
+	}
+```
+
+## Custom Descriptors
+If you have a particular model that you regularly follow, you can easilly create your own or extend an existing descriptor by Extending the DescriptorBase abstract class.
