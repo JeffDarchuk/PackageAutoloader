@@ -40,7 +40,7 @@ Out of the box descriptors include PackageAutoloaderDescriptor which allow the e
 	* Default: true
 	* Custom logic to be applied to this descriptor should be added here.
 	
-## Two stock types of descrptors
+## Two stock types of descriptors
 ### Autoloader type (embedded resource)
 You would use this type of loader if you have small packages that won't cause problems loaded into memory with the DLL and you don't want to fiddle with a custom deploy method for your packages.
 + Create the package you wish to install using Sitecore
