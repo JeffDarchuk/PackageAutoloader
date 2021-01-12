@@ -14,7 +14,7 @@ namespace PackageAutoloader.Models
 	{
 		public abstract string GetRelativeFilePath();
 		public virtual bool AllDescriptorItemRequirementsMustBeValid => true;
-
+		public virtual bool AllItemsExist => false;
 		public virtual List<Type> Dependencies => null;
 
 		public virtual IItemInstallerEvents ItemInstallerEvents => new DefaultItemInstallerEvents(new BehaviourOptions(InstallMode.Overwrite, MergeMode.Undefined));

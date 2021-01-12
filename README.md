@@ -16,6 +16,9 @@ Automate deployment and installation of packages to the Sitecore initalize pipel
 ## How it works.
 For an example review the PackageAutoLoaderDemo project in this repo
 
+### Async
+Setting the property `<Async>true</true>` it allows the system to not block the initialize thread for installation, this should limit the time impact.
+
 ### Descriptors
 Descriptors describe to the module what, where and how things should be installed.  All descriptors require or allow certain options to be present.
 Out of the box descriptors include PackageAutoloaderDescriptor which allow the embedding of zip files into dll files to simplify build/release needs and PackageFileLoaderDescriptor which manages a package from a filepath location that another process will deliver to.
@@ -68,6 +71,15 @@ NOTE:  This location can be anywhere accessable by the web server.
 
 ## Descriptor examples
 
+### If any item in the package is missing from the environment.
+```cs
+	public class DemoDescriptor : PackageAutoloaderDescriptor
+	{
+		public override string PackageNamespace => "PackageAutoloaderDemo.demo.zip";
+		public override bool AllItemsExist => true;
+		public override List<DescriptorItemRequirements> Requirements => new List<DescriptorItemRequirements>();
+	}
+```
 ### If an item with a particular ID is missing from Sitecore
 ```cs
 	public class DemoDescriptor : PackageAutoloaderDescriptor
