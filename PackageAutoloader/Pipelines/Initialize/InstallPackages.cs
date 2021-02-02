@@ -53,18 +53,21 @@ namespace PackageAutoloader.Pipelines.Initialize
                     bool shouldInstall = true;
                     if (descriptor.AllItemsExist)
                     {
+                        Log.Info(
+                            $"PackageAutoLoader: Package {descriptor.GetType().FullName} checking that all items already exist in Sitecore.",
+                            this);
                         shouldInstall = false;
                         var archive = new ZipArchive(File.OpenRead(MainUtil.MapPath(descriptor.GetRelativeFilePath())));
                         foreach (ZipArchiveEntry e in archive.Entries.Where(x => x.Name.EndsWith(".zip")))
                         {
                             var package = new ZipArchive(e.Open());
-                            foreach (ZipArchiveEntry itemZip in archive.Entries.Where(x => x.FullName.StartsWith("items")))
+                            foreach (ZipArchiveEntry itemZip in package.Entries.Where(x => x.FullName.StartsWith("items")))
                             {
                                 var db = Factory.GetDatabase(itemZip.FullName.Split('/')[1], false);
                                 XmlDocument reader = new XmlDocument();
                                 reader.Load(itemZip.Open());
                                 var id = reader.FirstChild.Attributes["id"].Value;
-                                var item = db.GetItem(id);
+                                var item = db.DataManager.DataEngine.GetItem(new ID(id), Sitecore.Globalization.Language.Current, Sitecore.Data.Version.Latest);
                                 if (item == null)
                                 {
                                     shouldInstall = true;
@@ -74,6 +77,9 @@ namespace PackageAutoloader.Pipelines.Initialize
                             if (!shouldInstall)
                             {
                                 alreadyInstalled.Add(descriptor.GetType());
+                                Log.Info(
+                                    $"PackageAutoLoader: Package {descriptor.GetType().FullName} will not be installed because it is already installed.",
+                                    this);
                             }
                         }
                     }
